@@ -28,33 +28,33 @@ public class ForestryIntegration
 	
 	protected static void init()
 	{
-		addFermenterRecipes();
-		addSqueezerRecipes();
-		if(ForestryAPI.enabledPlugins.contains("APICULTURE"))
-		addBOPFlowers();
+		//addFermenterRecipes();
+		//addSqueezerRecipes();
+		//if(ForestryAPI.enabledPlugins.contains("APICULTURE"))
+		//addBOPFlowers();
 		if(ForestryAPI.enabledPlugins.contains("STORAGE"))
 			addBlocksToBackpack();
 	}
 	
-	private static void addFermenterRecipes()
-	{
-		addFermenterRecipe(new ItemStack(BOPCBlocks.saplings, 1, OreDictionary.WILDCARD_VALUE), 250, LIQUID_BIOMASS);
-		addFermenterRecipe(new ItemStack(BOPCBlocks.colorizedSaplings, 1, OreDictionary.WILDCARD_VALUE), 250, LIQUID_BIOMASS);
-	}
+	//private static void addFermenterRecipes()
+	//{
+	//	addFermenterRecipe(new ItemStack(BOPCBlocks.saplings, 1, OreDictionary.WILDCARD_VALUE), 250, LIQUID_BIOMASS);
+	//	addFermenterRecipe(new ItemStack(BOPCBlocks.colorizedSaplings, 1, OreDictionary.WILDCARD_VALUE), 250, LIQUID_BIOMASS);
+	//}
 	
-	private static void addSqueezerRecipes()
-	{
-		RecipeManagers.squeezerManager.addRecipe(10, new ItemStack[] { new ItemStack(BOPCItems.food) }, FluidRegistry.getFluidStack(LIQUID_JUICE, 50), new ItemStack(mulch), 5);
-		RecipeManagers.squeezerManager.addRecipe(10, new ItemStack[] { new ItemStack(BOPCItems.food, 1, 8) }, FluidRegistry.getFluidStack(LIQUID_JUICE, 200), new ItemStack(mulch), 20);
-	}
+	//private static void addSqueezerRecipes()
+	//{
+	//	RecipeManagers.squeezerManager.addRecipe(10, new ItemStack[] { new ItemStack(BOPCItems.food) }, FluidRegistry.getFluidStack(LIQUID_JUICE, 50), new ItemStack(mulch), 5);
+	//	RecipeManagers.squeezerManager.addRecipe(10, new ItemStack[] { new ItemStack(BOPCItems.food, 1, 8) }, FluidRegistry.getFluidStack(LIQUID_JUICE, 200), new ItemStack(mulch), 20);
+	//}
 	
-	private static void addBOPFlowers()
-	{
-		for(int i = 0; i < 16; i++)
-			FlowerManager.flowerRegistry.registerPlantableFlower(BOPCBlocks.flowers, i, 1, FlowerManager.FlowerTypeVanilla);
-		for(int i = 0; i < 9; i++)
-			FlowerManager.flowerRegistry.registerPlantableFlower(BOPCBlocks.flowers2, i, 1, FlowerManager.FlowerTypeVanilla);
-	}
+	//private static void addBOPFlowers()
+	//{
+	//	for(int i = 0; i < 16; i++)
+	//		FlowerManager.flowerRegistry.registerPlantableFlower(BOPCBlocks.flowers, i, 1, FlowerManager.FlowerTypeVanilla);
+	//	for(int i = 0; i < 9; i++)
+	//		FlowerManager.flowerRegistry.registerPlantableFlower(BOPCBlocks.flowers2, i, 1, FlowerManager.FlowerTypeVanilla);
+	//}
 	
 	private static void addBlocksToBackpack()
 	{
