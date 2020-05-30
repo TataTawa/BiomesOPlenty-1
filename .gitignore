@@ -43,3 +43,7 @@ build_number.properties
 .classpath
 /bin/
 /build/
+BOP.iml
+BOP.ipr
+BOP.iws
+*.bat

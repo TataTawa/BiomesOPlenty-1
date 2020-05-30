@@ -29,10 +29,6 @@ repositories {
         name "fileRepo"
         dirs "repo"
     }
-    ivy {
-        name 'Forge FS legacy'
-        artifactPattern "http://files.minecraftforge.net/[module]/[module]-dev-[revision].[ext]"
-    }
 }
 
 // define the properties file
