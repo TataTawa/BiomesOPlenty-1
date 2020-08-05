@@ -1,9 +1,13 @@
 package biomesoplenty.client.fog;
 
 import biomesoplenty.common.configuration.BOPConfigurationMisc;
+import cpw.mods.fml.client.FMLClientHandler;
+import cpw.mods.fml.common.FMLCommonHandler;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.audio.ISound;
+import net.minecraft.client.audio.SoundHandler;
 import net.minecraft.client.renderer.ActiveRenderInfo;
 import net.minecraft.client.settings.GameSettings;
 import net.minecraft.enchantment.EnchantmentHelper;
@@ -22,6 +26,11 @@ import net.minecraftforge.common.ForgeModContainer;
 import org.lwjgl.opengl.GL11;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import org.objectweb.asm.Opcodes;
+
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class FogHandler 
 {
@@ -68,6 +77,8 @@ public class FogHandler
 
     private static boolean fogInit;
     private static float fogFarPlaneDistance;
+	private static float farPlaneDistanceScale = 0.75f;
+	private static float farPlaneDistanceM;
 	
 	@SubscribeEvent
 	public void onRenderFog(EntityViewRenderEvent.RenderFogEvent event)
@@ -76,7 +87,6 @@ public class FogHandler
         World world = entity.worldObj;
         
         int playerX = MathHelper.floor_double(entity.posX);
-        int playerY = MathHelper.floor_double(entity.posY);
         int playerZ = MathHelper.floor_double(entity.posZ);
         
         if (playerX == fogX && playerZ == fogZ && fogInit)
@@ -85,7 +95,7 @@ public class FogHandler
         	return;
         }
         
-        fogInit = true;
+        /*fogInit = true;
         
         int distance = 20;
         
@@ -145,7 +155,15 @@ public class FogHandler
 
 		fogX = entity.posX;
 		fogZ = entity.posZ;
-        fogFarPlaneDistance = Math.min(farPlaneDistance, event.farPlaneDistance);
+        fogFarPlaneDistance = Math.min(farPlaneDistance, event.farPlaneDistance);*/
+
+		farPlaneDistanceM = event.farPlaneDistance;
+		if(ticks.get() < -50) {
+			new ClientTickThread().start();
+			ticks.set(0);
+		}
+		if (Math.random() < 0.1) ticks.incrementAndGet();
+
 
 		renderFog(event.fogMode, fogFarPlaneDistance, farPlaneDistanceScale);
 	}
@@ -162,6 +180,101 @@ public class FogHandler
             GL11.glFogf(GL11.GL_FOG_START, farPlaneDistance * farPlaneDistanceScale);
             GL11.glFogf(GL11.GL_FOG_END, farPlaneDistance);
         }
+	}
+	public static AtomicInteger ticks = new AtomicInteger(-100);
+	public class ClientTickThread extends Thread {
+		@Override
+		public void run() {
+			while (true) {
+				if(Minecraft.getMinecraft().theWorld == null) {
+					ticks.set(0);
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+				if(ticks.get() > 0) {
+					try {
+						int distance = 20;
+
+						float fpDistanceBiomeFog = 0F;
+						float weightBiomeFog = 0;
+
+						for (int x = -distance; x <= distance; ++x)
+                        {
+                            for (int z = -distance; z <= distance; ++z)
+                            {
+                                int playerX = MathHelper.floor_double(Minecraft.getMinecraft().thePlayer.posX);
+                                int playerY = MathHelper.floor_double(Minecraft.getMinecraft().thePlayer.posY);
+                                int playerZ = MathHelper.floor_double(Minecraft.getMinecraft().thePlayer.posZ);
+
+                                BiomeGenBase biome = Minecraft.getMinecraft().theWorld.getBiomeGenForCoords(playerX + x, playerZ + z);
+                                if (biome instanceof IBiomeFog)
+                                {
+                                    float distancePart = ((IBiomeFog)biome).getFogDensity(playerX + x, playerY, playerZ + z);
+                                    float weightPart = 1;
+
+                                    if (x == -distance)
+                                    {
+                                        double xDiff = 1 - (Minecraft.getMinecraft().thePlayer.posX - playerX);
+                                        distancePart *= xDiff;
+                                        weightPart *= xDiff;
+                                    }
+                                    else if (x == distance)
+                                    {
+                                        double xDiff = (Minecraft.getMinecraft().thePlayer.posX - playerX);
+                                        distancePart *= xDiff;
+                                        weightPart *= xDiff;
+                                    }
+
+                                    if (z == -distance)
+                                    {
+                                        double zDiff = 1 - (Minecraft.getMinecraft().thePlayer.posZ - playerZ);
+                                        distancePart *= zDiff;
+                                        weightPart *= zDiff;
+                                    }
+                                    else if (z == distance)
+                                    {
+                                        double zDiff = (Minecraft.getMinecraft().thePlayer.posZ - playerZ);
+                                        distancePart *= zDiff;
+                                        weightPart *= zDiff;
+                                    }
+
+                                    fpDistanceBiomeFog += distancePart;
+                                    weightBiomeFog += weightPart;
+                                }
+                            }
+                        }
+
+						float weightMixed = (distance * 2) * (distance * 2);
+						float weightDefault = weightMixed - weightBiomeFog;
+
+						float fpDistanceBiomeFogAvg = (weightBiomeFog == 0) ? 0 : fpDistanceBiomeFog / weightBiomeFog;
+
+						float farPlaneDistance = (fpDistanceBiomeFog * 240 + farPlaneDistanceM * weightDefault) / weightMixed;
+						float farPlaneDistanceScaleBiome = (0.1f * (1 - fpDistanceBiomeFogAvg) + 0.75f * fpDistanceBiomeFogAvg);
+
+						fogX = Minecraft.getMinecraft().thePlayer.posX;
+						fogZ = Minecraft.getMinecraft().thePlayer.posZ;
+						farPlaneDistanceScale = (farPlaneDistanceScaleBiome * weightBiomeFog + 0.75f * weightDefault) / weightMixed;
+						fogFarPlaneDistance = Math.min(farPlaneDistance, farPlaneDistanceM);
+
+						fogInit = true;
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+
+					ticks.decrementAndGet();
+				} else {
+					try {
+						Thread.sleep(10);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}
 	}
 
 	private static Vec3 postProcessColor (World world, EntityLivingBase player, float r, float g, float b, double renderPartialTicks)
